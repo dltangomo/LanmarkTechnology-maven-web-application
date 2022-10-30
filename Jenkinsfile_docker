@@ -1,60 +1,59 @@
 pipeline{
-  agent any 
-  tools{
-    maven "maven3.8.4"
-  }
-  stages{
-    stage('GitClone'){
-      steps{
-        echo "cloning the lastest applications version"
-        git "https://github.com/LandmakTechnology/maven-web-application"
-      }
+    agent any 
+    tools {
+        maven "maven3.6.3"
     }
-      stage('Test+Build'){
-      steps{
-        sh "echo Running unitTesting"
-        sh "mvn clean package"
-        echo "echo test successful and backupArtifacts created"
-      }
+    stages{
+        stage ('1GitClone') {
+            steps {
+                echo "cloning the latest application version"
+                git "https://github.com/dltangomo/maven2-web-application"
+            }
+        }
+        stage ('2TestBuild') {
+            steps {
+                sh "echo running UnitTesting"
+                sh "echo UnitTesting ok, creating packages."
+                sh "mvn clean package"
+                sh "echo artifacts created"
+            }
+        }
+        stage ('3CodeQuality') {
+            steps {
+                sh "echo running CodeQuality report"
+                sh "mvn sonar:sonar"
+            }
+        }
+        stage ('4UploadArtifacts') {
+            steps {
+               sh "echo Running detail code analysis"
+               sh "mvn deploy"
+               sh "echo backupArtifacts in nexus"
+             }
+         }
+        stage ('PreDeployment') {
+            steps {
+              sh "echo creating docker image"             
+              sh "docker build -t dtangomo/app ."
+              sh "docker push dtangomo/app"
+            }
+        }
+stage ('UnDeployment') {
+            steps {
+                sh "echo Undeploying exixting application"
+                sh "docker rm -f new-app8"
+            }
+        }
+        stage ('Deployment') {
+            steps {
+                sh "echo application  ready for deployment"
+                sh "docker run --name new-app8 -d -p 3500:8080 dtangomo/app"
+            }
+        }
+        stage ('emailNotification') {
+            steps {
+                sh "echo deployment successful"
+            }
+        }
     }
-      stage('codeQuality'){
-      steps{
-        sh "echo Running detail code analysis"
-        sh "mvn sonar:sonar"
-        sh  "echo All conditions met/passed"
-      }
-    }
-      stage('upLoadArtifacts'){
-      steps{
-        sh "echo Running detail code analysis"
-        sh "mvn deploy"
-        sh "echo backupArtifacts in nexus"
-      }
-    }
-      stage('predeployment'){
-      steps{
-        sh "echo creating docker image"
-        sh "docker build -t mylandmarktech/maven-web-app . "
-        sh "docker push mylandmarktech/maven-web-app"
-      }
-    }
-    stage('UnDeploy'){
-      steps{
-        sh "echo UNDEPLOYING existing application"
-        sh "docker rm -f webapp"
-      }
-    }
-    stage('deployment'){
-      steps{
-        sh "echo application ready for deployment"
-        sh "docker run -d -p 8000:8080 --name webapp mylandmarktech/maven-web-app"
-      }
-    }
-  stage('emailNotification'){
-    steps{
-      sh "echo deployment successful"
-    }
-  }
-
-  }
 }
